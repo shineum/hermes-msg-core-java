@@ -5,8 +5,11 @@ import jakarta.activation.MimetypesFileTypeMap;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.logging.Logger;
 
 public class ByteArrayAttachment {
+    Logger logger = Logger.getLogger(ByteArrayAttachment.class.getName());
+
     String filename;
     String contentType;
     byte[] data;

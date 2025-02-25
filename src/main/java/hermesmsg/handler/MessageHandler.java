@@ -8,8 +8,10 @@ import hermesmsg.util.MessageConverter;
 
 import java.io.File;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class MessageHandler implements Constant {
+    Logger logger = Logger.getLogger(MessageHandler.class.getName());
 
     public static void addMessage(String connectionName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml) throws Exception {
         MessageHandler.addMessage(connectionName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml));

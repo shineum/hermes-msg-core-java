@@ -1,14 +1,15 @@
 package hermesmsg.net;
 
 import hermesmsg.client.IMessageClient;
-import lombok.Data;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
-@Data
 public class Connection {
     private EmailServiceType type = null;
     private Properties properties = null;
+
+    Logger logger = Logger.getLogger(Connection.class.getName());
 
     public Connection(EmailServiceType type, Properties properties) {
         this.type = type;
