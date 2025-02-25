@@ -5,8 +5,11 @@ import hermesmsg.util.MessageConverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class EmailMessage {
+    Logger logger = Logger.getLogger(EmailMessage.class.getName());
+
     String from;
     String to;
     String cc;
