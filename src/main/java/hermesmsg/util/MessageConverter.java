@@ -8,13 +8,15 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.*;
 
 public class MessageConverter implements Constant {
+
+    static Logger logger = Logger.getLogger(MessageConverter.class.getName());
 
     public static ByteArrayAttachment fileToByteArrayAttachment(File file) throws Exception {
         return new ByteArrayAttachment(file, null);
@@ -121,6 +123,19 @@ public class MessageConverter implements Constant {
             bytes = getDecompressedData(bytes);
         }
         return new JSONObject(new String(bytes, "UTF-8"));
+    }
+
+    public static Properties mapToProp(Map<String, String> map) {
+        return map
+                .entrySet()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (prev, next) -> next, Properties::new
+                        )
+                );
     }
 }
 
