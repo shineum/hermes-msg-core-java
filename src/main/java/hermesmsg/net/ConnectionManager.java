@@ -1,5 +1,7 @@
 package hermesmsg.net;
 
+import hermesmsg.client.MessageClientFactory;
+import hermesmsg.client.MessageClientManager;
 import hermesmsg.handler.IMessageQueueHandler;
 import hermesmsg.util.MessageConverter;
 
@@ -17,7 +19,9 @@ public class ConnectionManager {
     private static Map<String, IMessageQueueHandler> queueHandlerMap = new HashMap<>();
 
     public static void setConnection(String name, EmailServiceType type, Properties props) {
+        logger.info(String.format("[SET] [%s] [%s]", name, type));
         connectionMap.put(name, new Connection(type, props));
+        MessageClientManager.setMessageClient(name, MessageClientFactory.create(type, props));
     }
 
     public static void setConnection(String name, EmailServiceType type, String propertyStr) {
