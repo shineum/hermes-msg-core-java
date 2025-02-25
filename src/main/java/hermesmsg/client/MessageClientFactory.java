@@ -12,7 +12,7 @@ public class MessageClientFactory {
     @SuppressWarnings("unchecked")
     public static IMessageClient create(EmailServiceType type, Properties props) {
         try {
-            String className = String.format("hermesmsg.client.MessageClient_%s", type.toString());
+            String className = String.format("%s.impl.%s", MessageClientFactory.class.getPackageName(), type.toString());
             Class clazz = Class.forName(className);
             Method method = clazz.getDeclaredMethod("initClient", Properties.class);
             return (IMessageClient) method.invoke(clazz.getConstructor().newInstance(), props);
