@@ -45,7 +45,7 @@ public class ConnectionManager {
         queueHandlerMap.put(name, queueHandler);
     }
 
-    public static Connection getConnectionProp(String name) {
+    public static Connection getConnection(String name) {
         return connectionMap.get(name);
     }
 
