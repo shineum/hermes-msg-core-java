@@ -18,10 +18,15 @@ public class ConnectionManager {
     private static Map<String, Connection> connectionMap = new HashMap<>();
     private static Map<String, IMessageQueueHandler> queueHandlerMap = new HashMap<>();
 
+    public static void setConnection(String name, String className, Properties props) {
+        logger.info(String.format("[SET] [%s] [%s]", name, className));
+        connectionMap.put(name, new Connection(className, props));
+        MessageClientManager.setMessageClient(name, MessageClientFactory.create(className, props));
+    }
+
     public static void setConnection(String name, EmailServiceType type, Properties props) {
-        logger.info(String.format("[SET] [%s] [%s]", name, type));
-        connectionMap.put(name, new Connection(type, props));
-        MessageClientManager.setMessageClient(name, MessageClientFactory.create(type, props));
+        String defaultClassName = String.format("%s.impl.%s", MessageClientFactory.class.getPackageName(), type.toString());
+        setConnection(name, defaultClassName, props);
     }
 
     public static void setConnection(String name, EmailServiceType type, String propertyStr) {

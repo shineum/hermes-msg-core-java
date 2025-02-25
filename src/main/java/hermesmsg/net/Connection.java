@@ -6,13 +6,13 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 public class Connection {
-    private EmailServiceType type = null;
+    private String className = null;
     private Properties properties = null;
 
     Logger logger = Logger.getLogger(Connection.class.getName());
 
-    public Connection(EmailServiceType type, Properties properties) {
-        this.type = type;
+    public Connection(String className, Properties properties) {
+        this.className = className;
         this.properties = properties;
     }
 

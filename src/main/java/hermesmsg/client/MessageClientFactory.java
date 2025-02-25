@@ -1,7 +1,5 @@
 package hermesmsg.client;
 
-import hermesmsg.net.EmailServiceType;
-
 import java.lang.reflect.Method;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -10,9 +8,8 @@ public class MessageClientFactory {
     static Logger logger = Logger.getLogger(MessageClientFactory.class.getName());
 
     @SuppressWarnings("unchecked")
-    public static IMessageClient create(EmailServiceType type, Properties props) {
+    public static IMessageClient create(String className, Properties props) {
         try {
-            String className = String.format("%s.impl.%s", MessageClientFactory.class.getPackageName(), type.toString());
             Class clazz = Class.forName(className);
             Method method = clazz.getDeclaredMethod("initClient", Properties.class);
             return (IMessageClient) method.invoke(clazz.getConstructor().newInstance(), props);
