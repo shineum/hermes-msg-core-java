@@ -5,13 +5,14 @@ import hermesmsg.entity.EmailMessage;
 import hermesmsg.net.ConnectionManager;
 import hermesmsg.util.Constant;
 import hermesmsg.util.MessageConverter;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.util.List;
 import java.util.logging.Logger;
 
 public class MessageHandler implements Constant {
-    Logger logger = Logger.getLogger(MessageHandler.class.getName());
+    static Logger logger = Logger.getLogger(MessageHandler.class.getName());
 
     public static void addMessage(String connectionName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml) throws Exception {
         MessageHandler.addMessage(connectionName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml));
@@ -35,15 +36,15 @@ public class MessageHandler implements Constant {
         }
     }
 
-    public static void postMessage(String jsonMsgStr) throws Exception {
-        System.out.println("Send Message\t" + jsonMsgStr);
-
-        // TODO: get MessageClient Object
-
-//        JSONObject jj = MessageConverter.parseJSONStr(jsonMsgStr);
-//        JSONObject jx = MessageConverter.parseEmailMessage(jj.getString("msg"), true);
-//        System.out.println(jx.toString());
-        // TODO: MessageClient::sendMessage(jsonMsgStr)
-
+    public static void postMessage(String jsonMsgStr) {
+        try {
+            logger.info(String.format("Send Message:\n%s", jsonMsgStr));
+            JSONObject jsonObject = new JSONObject(jsonMsgStr);
+            String name = jsonObject.getString("connection");
+            String msg = jsonObject.getString("msg");
+            ConnectionManager.getConnection(name).getMessageClient().send(msg);
+        } catch (Exception e) {
+            logger.severe("[POST]\n" + e.toString());
+        }
     }
 }
