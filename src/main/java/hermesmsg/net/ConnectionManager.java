@@ -1,12 +1,18 @@
 package hermesmsg.net;
 
 import hermesmsg.handler.IMessageQueueHandler;
+import hermesmsg.util.MessageConverter;
 
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 public class ConnectionManager {
+    static Logger logger = Logger.getLogger(ConnectionManager.class.getName());
+
     private static Map<String, Connection> connectionMap = new HashMap<>();
     private static Map<String, IMessageQueueHandler> queueHandlerMap = new HashMap<>();
 
@@ -14,9 +20,21 @@ public class ConnectionManager {
         connectionMap.put(name, ConnectionBuilder.createConnection(type, props));
     }
 
-    public static void setConnection(String name, EmailServiceType type, Properties props, IMessageQueueHandler queueHandler) {
-        setConnection(name, type, props);
-        setMessageQueueHandler(name, queueHandler);
+    public static void setConnection(String name, EmailServiceType type, String propertyStr) {
+        try {
+            Properties props = new Properties();
+            props.load(new StringReader(propertyStr));
+            setConnection(name, type, props);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+        }
+    }
+
+    public static void setConnection(String name, EmailServiceType type, Map<String, String> propertyMap) {
+        Optional.ofNullable(propertyMap)
+                .ifPresent(m -> {
+                    setConnection(name, type, MessageConverter.mapToProp(m));
+                });
     }
 
     public static void setMessageQueueHandler(String name, IMessageQueueHandler queueHandler) {
