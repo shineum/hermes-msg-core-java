@@ -17,7 +17,7 @@ public class ConnectionManager {
     private static Map<String, IMessageQueueHandler> queueHandlerMap = new HashMap<>();
 
     public static void setConnection(String name, EmailServiceType type, Properties props) {
-        connectionMap.put(name, ConnectionBuilder.createConnection(type, props));
+        connectionMap.put(name, new Connection(type, props));
     }
 
     public static void setConnection(String name, EmailServiceType type, String propertyStr) {
