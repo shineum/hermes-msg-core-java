@@ -57,6 +57,15 @@ public class MessageConverter implements Constant {
         return new JSONObject().put(MESSAGE_KEY_BODY_CONTENT, body).put(MESSAGE_KEY_BODY_CONTENT_TYPE, isHtml ? MESSAGE_VALUE_BODY_CONTENT_TYPE_HTML : MESSAGE_VALUE_BODY_CONTENT_TYPE_TEXT);
     }
 
+    private static JSONObject parseMessageFromObject(String internetAddressStr) {
+        try {
+            return getMessageRecipientObject(InternetAddress.parse(internetAddressStr)[0]);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+        }
+        return null;
+    }
+
     private static JSONArray getMessageRecipientArray(String internetAddressStr) throws Exception {
         if (internetAddressStr == null || internetAddressStr.isBlank()) return null;
         JSONArray jsonArray = new JSONArray();
@@ -83,12 +92,22 @@ public class MessageConverter implements Constant {
     }
 
     private static JSONObject getMessageAttachmentObject(ByteArrayAttachment attachment) {
-        return new JSONObject().put(MESSAGE_KEY_ATTACHMENTS_DATA_TYPE, MESSAGE_VALUE_ATTACHMENTS_DATA_TYPE).put(MESSAGE_KEY_ATTACHMENTS_NAME, attachment.getFilename()).put(MESSAGE_KEY_ATTACHMENTS_CONTENT_TYPE, attachment.getContentType()).put(MESSAGE_KEY_ATTACHMENTS_DATA, attachment.getBase64Data());
+        return new JSONObject()
+                .put(MESSAGE_KEY_ATTACHMENTS_DATA_TYPE, MESSAGE_VALUE_ATTACHMENTS_DATA_TYPE)
+                .put(MESSAGE_KEY_ATTACHMENTS_NAME, attachment.getFilename())
+                .put(MESSAGE_KEY_ATTACHMENTS_CONTENT_TYPE, attachment.getContentType())
+                .put(MESSAGE_KEY_ATTACHMENTS_DATA, attachment.getBase64Data());
     }
 
     private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) throws Exception {
-        // TODO add "from"
-        JSONObject jsonObject = new JSONObject().put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject()).put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml())).put(MESSAGE_KEY_TO, getMessageRecipientArray(emailMessage.getTo()));
+        JSONObject jsonObject = new JSONObject()
+                .put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject())
+                .put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml()))
+                .put(MESSAGE_KEY_TO, getMessageRecipientArray(emailMessage.getTo()));
+        Optional.ofNullable(parseMessageFromObject(emailMessage.getFrom())).map(val -> {
+            jsonObject.put(MESSAGE_KEY_FROM, val);
+            return val;
+        });
         Optional.ofNullable(getMessageRecipientArray(emailMessage.getCc())).map(val -> {
             jsonObject.put(MESSAGE_KEY_CC, val);
             return val;
@@ -109,8 +128,9 @@ public class MessageConverter implements Constant {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, boolean useCompress) throws Exception {
-        return new JSONObject().put("connection", connectionName).put("msg", buildJSONMsgStr(emailMessage, useCompress)).put("z", useCompress).toString();
+    public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) throws Exception {
+        boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get("useCompress")).orElse(false);
+        return new JSONObject().put("connection", connectionName).put("msg", buildJSONMsgStr(emailMessage, useCompress)).put("options", options).toString();
     }
 
     public static JSONObject parseJSONStr(String jsonMsgStr) throws Exception {
@@ -123,6 +143,10 @@ public class MessageConverter implements Constant {
             bytes = getDecompressedData(bytes);
         }
         return new JSONObject(new String(bytes, "UTF-8"));
+    }
+
+    public static JSONObject parseEmailAddressObject(JSONObject jo) {
+        return Optional.ofNullable(jo).map(pJo -> pJo.getJSONObject(MESSAGE_KEY_EMAIL)).orElse(null);
     }
 
     public static Properties mapToProp(Map<String, String> map) {

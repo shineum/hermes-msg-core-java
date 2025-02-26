@@ -1,4 +1,4 @@
-package hermesmsg.net;
+package hermesmsg.client;
 
 public enum EmailServiceType {
     SMTP,
