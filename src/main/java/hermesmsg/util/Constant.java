@@ -22,4 +22,5 @@ public interface Constant {
     public static final String MESSAGE_VALUE_BODY_CONTENT_TYPE_HTML = "html";
     public static final String MESSAGE_VALUE_BODY_CONTENT_TYPE_TEXT = "text";
     public static final String MESSAGE_VALUE_ATTACHMENTS_DATA_TYPE = "#microsoft.graph.fileAttachment";
+    public static final String OPTION_USE_COMPRESS = "useCompress";
 }
