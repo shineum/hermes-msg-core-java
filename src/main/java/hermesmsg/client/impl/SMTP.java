@@ -14,21 +14,18 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class SMTP implements IMessageClient, Constant {
-    private String authUser = null;
-    private String authPassword = null;
     private String from = null;
     private String displayName = null;
-    private Properties mailProps = null;
     private Session session = null;
 
     @Override
     public IMessageClient initClient(Properties props) {
-        authUser = props.getProperty("mail.smtp.user");
-        authPassword = props.getProperty("mail.extra.secret");
+        final String authUser = props.getProperty("mail.smtp.user");
+        final String authPassword = props.getProperty("mail.extra.secret");
         from = props.getProperty("mail.smtp.from", authUser);
         displayName = props.getProperty("mail.extra.displayname");
 
-        mailProps = new Properties();
+        Properties mailProps = new Properties();
         props.keySet().stream().map(Object::toString).filter(key -> key.startsWith("mail.smtp")).forEach(key -> {
             mailProps.put(key, props.getProperty(key));
         });
@@ -46,45 +43,91 @@ public class SMTP implements IMessageClient, Constant {
         return this;
     }
 
+    private MimeBodyPart parseAttachment(JSONObject joAttachment) {
+        try {
+            MimeBodyPart mbp = new MimeBodyPart();
+            ByteArrayDataSource bads = new ByteArrayDataSource(
+                    Base64.getDecoder().decode(joAttachment.getString(MESSAGE_KEY_ATTACHMENTS_DATA)),
+                    joAttachment.getString(MESSAGE_KEY_ATTACHMENTS_CONTENT_TYPE)
+            );
+            mbp.setDataHandler(new DataHandler(bads));
+            mbp.setFileName(joAttachment.getString(MESSAGE_KEY_ATTACHMENTS_NAME));
+            return mbp;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private InternetAddress parseRecipientInternetAddress(JSONObject joRecipient) {
+        try {
+            String rEmail = null;
+            String rDisplayName = null;
+            if (joRecipient.has(MESSAGE_KEY_EMAIL)) {
+                JSONObject joEmail = joRecipient.getJSONObject(MESSAGE_KEY_EMAIL);
+                if (joEmail.has(MESSAGE_KEY_EMAIL_ADDRESS)) {
+                    rEmail = joEmail.getString(MESSAGE_KEY_EMAIL_ADDRESS);
+                    rDisplayName = joEmail.has(MESSAGE_KEY_EMAIL_NAME) ? joEmail.getString(MESSAGE_KEY_EMAIL_NAME) : null;
+                    return new InternetAddress(rEmail, rDisplayName);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     @Override
     public void send(String msg, JSONObject options) {
         boolean useCompress = false;
-        if (options != null && options.has("useCompress")) {
-            useCompress = options.getBoolean("useCompress");
+        if (options != null && options.has(OPTION_USE_COMPRESS)) {
+            useCompress = options.getBoolean(OPTION_USE_COMPRESS);
         }
         try {
             JSONObject jo = MessageConverter.parseEmailMessage(msg, useCompress);
             Message simpleMessage = new MimeMessage(session);
-            if (jo.has(MESSAGE_KEY_FROM)) {
-                JSONObject pJo = MessageConverter.parseEmailAddressObject(jo.getJSONObject(MESSAGE_KEY_FROM));
-                System.out.println(pJo.toString());
-                simpleMessage.setFrom(new InternetAddress((pJo == null) ? from : pJo.getString(MESSAGE_KEY_EMAIL_ADDRESS), (pJo == null || pJo.isNull(MESSAGE_KEY_EMAIL_NAME)) ? displayName : pJo.getString(MESSAGE_KEY_EMAIL_NAME)));
+            // from
+            {
+                String fromEmail = from;
+                String fromDisplayName = displayName;
+                if (jo.has(MESSAGE_KEY_FROM)) {
+                    JSONObject joFrom = MessageConverter.parseEmailAddressObject(jo.getJSONObject(MESSAGE_KEY_FROM));
+                    if (joFrom != null) {
+                        if (joFrom.has(MESSAGE_KEY_EMAIL_ADDRESS)) {
+                            fromEmail = joFrom.getString(MESSAGE_KEY_EMAIL_ADDRESS);
+                        }
+                        if (joFrom.has(MESSAGE_KEY_EMAIL_NAME)) {
+                            fromDisplayName = joFrom.getString(MESSAGE_KEY_EMAIL_NAME);
+                        }
+                    }
+                }
+                simpleMessage.setFrom(new InternetAddress(fromEmail, fromDisplayName));
             }
-
-            simpleMessage.setSubject(jo.getString(MESSAGE_KEY_SUBJECT));
+            // subject
+            {
+                simpleMessage.setSubject(jo.getString(MESSAGE_KEY_SUBJECT));
+            }
+            // body (content)
             {
                 JSONObject joBody = jo.getJSONObject(MESSAGE_KEY_BODY);
                 String msgContentType = (joBody.has(MESSAGE_KEY_BODY_CONTENT_TYPE) && "html".equals(joBody.getString(MESSAGE_KEY_BODY_CONTENT_TYPE))) ? "text/html" : "text/plain";
                 if (jo.has(MESSAGE_KEY_ATTACHMENTS)) {
-                    // multipart
                     Multipart mp = new MimeMultipart();
                     {
                         MimeBodyPart mbp = new MimeBodyPart();
                         mbp.setContent(joBody.getString(MESSAGE_KEY_BODY_CONTENT), msgContentType);
                         mp.addBodyPart(mbp);
                     }
-                    jo.getJSONArray(MESSAGE_KEY_ATTACHMENTS).forEach(po -> {
-                        try {
-                            JSONObject pJo = (JSONObject) po;
-                            MimeBodyPart mbp = new MimeBodyPart();
-                            byte[] attachmentBinary = Base64.getDecoder().decode(pJo.getString(MESSAGE_KEY_ATTACHMENTS_DATA));
-                            ByteArrayDataSource bads = new ByteArrayDataSource(attachmentBinary, pJo.getString(MESSAGE_KEY_ATTACHMENTS_CONTENT_TYPE));
-                            mbp.setDataHandler(new DataHandler(bads));
-                            mbp.setFileName(pJo.getString(MESSAGE_KEY_ATTACHMENTS_NAME));
-                            mp.addBodyPart(mbp);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                    jo.getJSONArray(MESSAGE_KEY_ATTACHMENTS).forEach(jsonAttachment -> {
+                        Optional.ofNullable(parseAttachment((JSONObject) jsonAttachment))
+                                .map(mbp -> {
+                                    try {
+                                        mp.addBodyPart(mbp);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    return null;
+                                });
                     });
                     simpleMessage.setContent(mp);
                 } else {
@@ -92,46 +135,37 @@ public class SMTP implements IMessageClient, Constant {
                     simpleMessage.setContent(joBody.getString(MESSAGE_KEY_BODY_CONTENT), msgContentType);
                 }
             }
-
+            // recipient to
             if (jo.has(MESSAGE_KEY_TO)) {
-                Optional.ofNullable(jo.getJSONArray(MESSAGE_KEY_TO)).map(pJA -> {
-                    pJA.forEach(po -> {
-                        try {
-                            JSONObject pJo = ((JSONObject) po).getJSONObject(MESSAGE_KEY_EMAIL);
-                            simpleMessage.addRecipient(Message.RecipientType.TO, new InternetAddress(pJo.getString(MESSAGE_KEY_EMAIL_ADDRESS), pJo.has(MESSAGE_KEY_EMAIL_NAME) ? pJo.getString(MESSAGE_KEY_EMAIL_NAME) : null));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    return pJA;
+                jo.getJSONArray(MESSAGE_KEY_TO).forEach(oRecipient -> {
+                    try {
+                        simpleMessage.addRecipient(Message.RecipientType.TO, parseRecipientInternetAddress((JSONObject) oRecipient));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 });
             }
+            // recipient cc
             if (jo.has(MESSAGE_KEY_CC)) {
-                Optional.ofNullable(jo.getJSONArray(MESSAGE_KEY_CC)).map(pJA -> {
-                    pJA.forEach(po -> {
-                        try {
-                            JSONObject pJo = ((JSONObject) po).getJSONObject(MESSAGE_KEY_EMAIL);
-                            simpleMessage.addRecipient(Message.RecipientType.CC, new InternetAddress(pJo.getString(MESSAGE_KEY_EMAIL_ADDRESS), pJo.has(MESSAGE_KEY_EMAIL_NAME) ? pJo.getString(MESSAGE_KEY_EMAIL_NAME) : null));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    return pJA;
+                jo.getJSONArray(MESSAGE_KEY_CC).forEach(oRecipient -> {
+                    try {
+                        simpleMessage.addRecipient(Message.RecipientType.CC, parseRecipientInternetAddress((JSONObject) oRecipient));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 });
             }
+            // recipient bcc
             if (jo.has(MESSAGE_KEY_BCC)) {
-                Optional.ofNullable(jo.getJSONArray(MESSAGE_KEY_BCC)).map(pJA -> {
-                    pJA.forEach(po -> {
-                        try {
-                            JSONObject pJo = ((JSONObject) po).getJSONObject(MESSAGE_KEY_EMAIL);
-                            simpleMessage.addRecipient(Message.RecipientType.BCC, new InternetAddress(pJo.getString(MESSAGE_KEY_EMAIL_ADDRESS), pJo.has(MESSAGE_KEY_EMAIL_NAME) ? pJo.getString(MESSAGE_KEY_EMAIL_NAME) : null));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    return pJA;
+                jo.getJSONArray(MESSAGE_KEY_BCC).forEach(oRecipient -> {
+                    try {
+                        simpleMessage.addRecipient(Message.RecipientType.BCC, parseRecipientInternetAddress((JSONObject) oRecipient));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 });
             }
+            // send
             Transport.send(simpleMessage);
         } catch (Exception e) {
             e.printStackTrace();
