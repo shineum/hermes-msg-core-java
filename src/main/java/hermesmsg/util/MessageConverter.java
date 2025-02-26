@@ -129,7 +129,7 @@ public class MessageConverter implements Constant {
     }
 
     public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) throws Exception {
-        boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get("useCompress")).orElse(false);
+        boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get(OPTION_USE_COMPRESS)).orElse(false);
         return new JSONObject().put("connection", connectionName).put("msg", buildJSONMsgStr(emailMessage, useCompress)).put("options", options).toString();
     }
 
