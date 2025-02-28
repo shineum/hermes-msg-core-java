@@ -6,7 +6,7 @@ import java.util.Map;
 public class MessageQueueManager {
     private static Map<String, IMessageQueueHandler> queueHandlerMap = new HashMap<>();
 
-    public static void setMessageQueueHandler(String name, IMessageQueueHandler queueHandler) {
+    public static void setQueueHandler(String name, IMessageQueueHandler queueHandler) {
         queueHandlerMap.put(name, queueHandler);
     }
 
