@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public class EmailMessage {
 
-    Logger logger = LoggerFactory.getLogger(EmailMessage.class);
+    static Logger logger = LoggerFactory.getLogger(EmailMessage.class);
 
     String from;
     String to;
