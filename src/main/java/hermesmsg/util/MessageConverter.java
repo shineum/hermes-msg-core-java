@@ -120,7 +120,7 @@ public class MessageConverter implements Constant {
                 .put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject())
                 .put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml()))
                 .put(MESSAGE_KEY_TO, getMessageRecipientArray(emailMessage.getTo()));
-        
+
         Optional.ofNullable(parseMessageFromObject(emailMessage.getFrom())).map(val -> {
             jsonObject.put(MESSAGE_KEY_FROM, val);
             return val;
@@ -153,7 +153,10 @@ public class MessageConverter implements Constant {
 
     public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) {
         boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get(OPTION_USE_COMPRESS)).orElse(false);
-        return new JSONObject().put("connection", connectionName).put("msg", buildJSONMsgStr(emailMessage, useCompress)).put("options", options).toString();
+        return new JSONObject()
+                .put(TXT_CLIENT_NAME, connectionName)
+                .put(TXT_MSG, buildJSONMsgStr(emailMessage, useCompress))
+                .put(TXT_OPTIONS, options).toString();
     }
 
     public static JSONObject parseJSONStr(String jsonMsgStr) {
