@@ -6,13 +6,15 @@ import hermesmsg.entity.EmailMessage;
 import hermesmsg.util.Constant;
 import hermesmsg.util.MessageConverter;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class MessageHandler implements Constant {
-    static Logger logger = Logger.getLogger(MessageHandler.class.getName());
+
+    static Logger logger = LoggerFactory.getLogger(MessageHandler.class);
 
     public static void addMessage(String messageClientName, String to, String subject, String body) {
         MessageHandler.addMessage(messageClientName, new EmailMessage(to, subject, body));
@@ -49,7 +51,7 @@ public class MessageHandler implements Constant {
             JSONObject options = jsonObject.getJSONObject("options");
             MessageClientManager.getMessageClient(name).send(msg, options);
         } catch (Exception e) {
-            logger.severe("[POST]\n" + e.toString());
+            logger.error("[POST]\n", e);
         }
     }
 }
