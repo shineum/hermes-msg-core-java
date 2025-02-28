@@ -27,6 +27,7 @@ public class EmailMessage {
         this.to = to;
         this.subject = subject;
         this.body = body;
+        this.isHtml = false;
     }
 
     public EmailMessage(String to, String subject, String body, boolean isHtml) {
