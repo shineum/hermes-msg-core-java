@@ -12,17 +12,18 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.*;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterOutputStream;
 
 public class MessageConverter implements Constant {
 
     static Logger logger = Logger.getLogger(MessageConverter.class.getName());
 
-    public static ByteArrayAttachment fileToByteArrayAttachment(File file) throws Exception {
+    public static ByteArrayAttachment fileToByteArrayAttachment(File file) {
         return new ByteArrayAttachment(file, null);
     }
 
-    public static List<ByteArrayAttachment> fileListToByteArrayAttachmentList(List<File> attachmentList) throws Exception {
+    public static List<ByteArrayAttachment> fileListToByteArrayAttachmentList(List<File> attachmentList) {
         if (attachmentList == null) return null;
         return attachmentList.stream().map(val -> {
             try {
@@ -34,22 +35,32 @@ public class MessageConverter implements Constant {
     }
 
     //
-    private static byte[] getCompressedData(byte[] bytes) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DeflaterOutputStream dos = new DeflaterOutputStream(baos);
-        dos.write(bytes);
-        dos.close();
-        baos.close();
-        return baos.toByteArray();
+    private static byte[] getCompressedData(byte[] bytes) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DeflaterOutputStream dos = new DeflaterOutputStream(baos);
+            dos.write(bytes);
+            dos.close();
+            baos.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    private static byte[] getDecompressedData(byte[] bytes) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InflaterOutputStream ios = new InflaterOutputStream(baos);
-        ios.write(bytes);
-        ios.close();
-        baos.close();
-        return baos.toByteArray();
+    private static byte[] getDecompressedData(byte[] bytes) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            InflaterOutputStream ios = new InflaterOutputStream(baos);
+            ios.write(bytes);
+            ios.close();
+            baos.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     //
@@ -66,10 +77,14 @@ public class MessageConverter implements Constant {
         return null;
     }
 
-    private static JSONArray getMessageRecipientArray(String internetAddressStr) throws Exception {
+    private static JSONArray getMessageRecipientArray(String internetAddressStr) {
         if (internetAddressStr == null || internetAddressStr.isBlank()) return null;
         JSONArray jsonArray = new JSONArray();
-        Stream.of(InternetAddress.parse(internetAddressStr)).map(MessageConverter::getMessageRecipientObject).forEach(jsonArray::put);
+        try {
+            Stream.of(InternetAddress.parse(internetAddressStr)).map(MessageConverter::getMessageRecipientObject).forEach(jsonArray::put);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return jsonArray;
     }
 
@@ -82,7 +97,7 @@ public class MessageConverter implements Constant {
         return new JSONObject().put(MESSAGE_KEY_EMAIL, jsonObject);
     }
 
-    private static JSONArray getMessageAttachmentArray(List<ByteArrayAttachment> attachments) throws Exception {
+    private static JSONArray getMessageAttachmentArray(List<ByteArrayAttachment> attachments) {
         if (attachments == null || attachments.isEmpty()) return null;
         JSONArray jsonArray = new JSONArray();
         for (ByteArrayAttachment baa : attachments) {
@@ -99,7 +114,7 @@ public class MessageConverter implements Constant {
                 .put(MESSAGE_KEY_ATTACHMENTS_DATA, attachment.getBase64Data());
     }
 
-    private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) throws Exception {
+    private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) {
         JSONObject jsonObject = new JSONObject()
                 .put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject())
                 .put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml()))
@@ -121,28 +136,44 @@ public class MessageConverter implements Constant {
             return val;
         });
 
-        byte[] bytes = jsonObject.toString().getBytes("UTF-8");
-        if (useCompress) {
-            bytes = getCompressedData(bytes);
+        try {
+            byte[] bytes = null;
+            bytes = jsonObject.toString().getBytes("UTF-8");
+            if (useCompress) {
+                bytes = getCompressedData(bytes);
+            }
+            return Base64.getEncoder().encodeToString(bytes);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return Base64.getEncoder().encodeToString(bytes);
+        return null;
     }
 
-    public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) throws Exception {
+    public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) {
         boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get(OPTION_USE_COMPRESS)).orElse(false);
         return new JSONObject().put("connection", connectionName).put("msg", buildJSONMsgStr(emailMessage, useCompress)).put("options", options).toString();
     }
 
-    public static JSONObject parseJSONStr(String jsonMsgStr) throws Exception {
-        return new JSONObject(jsonMsgStr);
+    public static JSONObject parseJSONStr(String jsonMsgStr) {
+        try {
+            return new JSONObject(jsonMsgStr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    public static JSONObject parseEmailMessage(String bodyStr, boolean isCompressed) throws Exception {
-        byte[] bytes = Base64.getDecoder().decode(bodyStr);
-        if (isCompressed) {
-            bytes = getDecompressedData(bytes);
+    public static JSONObject parseEmailMessage(String bodyStr, boolean isCompressed) {
+        try {
+            byte[] bytes = Base64.getDecoder().decode(bodyStr);
+            if (isCompressed) {
+                bytes = getDecompressedData(bytes);
+            }
+            return new JSONObject(new String(bytes, "UTF-8"));
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return new JSONObject(new String(bytes, "UTF-8"));
+        return null;
     }
 
     public static JSONObject parseEmailAddressObject(JSONObject jo) {
