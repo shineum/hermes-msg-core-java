@@ -1,6 +1,7 @@
 package hermesmsg.client.impl;
 
 import hermesmsg.client.IMessageClient;
+import hermesmsg.client.MessageClientFactory;
 import hermesmsg.util.Constant;
 import hermesmsg.util.MessageConverter;
 import jakarta.activation.DataHandler;
@@ -8,12 +9,16 @@ import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import jakarta.mail.util.ByteArrayDataSource;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Properties;
 
 public class SMTP implements IMessageClient, Constant {
+    Logger logger = LoggerFactory.getLogger(SMTP.class);
+
     private String from = null;
     private String displayName = null;
     private Session session = null;
