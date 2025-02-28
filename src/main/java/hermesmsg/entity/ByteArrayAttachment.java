@@ -10,7 +10,7 @@ import java.util.Base64;
 
 public class ByteArrayAttachment {
 
-    Logger logger = LoggerFactory.getLogger(ByteArrayAttachment.class);
+    static Logger logger = LoggerFactory.getLogger(ByteArrayAttachment.class);
 
     String filename;
     String contentType;
@@ -28,7 +28,7 @@ public class ByteArrayAttachment {
         try {
             this.data = Files.readAllBytes(f.toPath());
         } catch (Exception e) {
-            logger.error("[Attachment]\n", e.toString());
+            logger.error("[ATTACHMENT]\n", e);
         }
     }
 
