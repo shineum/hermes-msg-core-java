@@ -20,10 +20,14 @@ public class ByteArrayAttachment {
         this.data = data;
     }
 
-    public ByteArrayAttachment(File f, String contentType) throws Exception {
+    public ByteArrayAttachment(File f, String contentType) {
         this.filename = f.getName();
         this.contentType = contentType;
-        this.data = Files.readAllBytes(f.toPath());
+        try {
+            this.data = Files.readAllBytes(f.toPath());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String getFilename() {
