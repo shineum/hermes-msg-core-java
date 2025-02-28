@@ -1,6 +1,5 @@
 package hermesmsg.client;
 
-import hermesmsg.entity.ByteArrayAttachment;
 import hermesmsg.util.MessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +11,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class MessageClientManager {
-    //    static Logger logger = Logger.getLogger(MessageClientManager.class.getName());
+
     static Logger logger = LoggerFactory.getLogger(MessageClientManager.class);
 
     private static Map<String, IMessageClient> clientMap = new HashMap<>();
@@ -37,7 +36,7 @@ public class MessageClientManager {
             props.load(new StringReader(propertyStr));
             setMessageClient(name, type, props);
         } catch (Exception e) {
-            logger.error("set", e.toString());
+            logger.error("[SET]", e);
         }
     }
 
