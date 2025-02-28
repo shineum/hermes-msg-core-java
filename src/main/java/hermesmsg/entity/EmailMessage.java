@@ -5,6 +5,7 @@ import hermesmsg.util.MessageConverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 public class EmailMessage {
@@ -19,6 +20,19 @@ public class EmailMessage {
     boolean isHtml;
     List<ByteArrayAttachment> attachments;
 
+    public EmailMessage(String to, String subject, String body) {
+        this.to = to;
+        this.subject = subject;
+        this.body = body;
+    }
+
+    public EmailMessage(String to, String subject, String body, boolean isHtml) {
+        this.to = to;
+        this.subject = subject;
+        this.body = body;
+        this.isHtml = isHtml;
+    }
+
     public EmailMessage(String from, String to, String cc, String bcc, String subject, String body, boolean isHtml) {
         this.from = from;
         this.to = to;
@@ -29,15 +43,15 @@ public class EmailMessage {
         this.isHtml = isHtml;
     }
 
-    public EmailMessage addFileAttachment(File attachment) throws Exception {
+    public EmailMessage addFileAttachment(File attachment) {
         if (this.attachments == null) {
             this.attachments = new ArrayList<>();
         }
-        this.attachments.add(MessageConverter.fileToByteArrayAttachment(attachment));
+        Optional.ofNullable(MessageConverter.fileToByteArrayAttachment(attachment)).map(this.attachments::add);
         return this;
     }
 
-    public EmailMessage addAttachment(ByteArrayAttachment attachment) {
+    public EmailMessage addByteArrayAttachment(ByteArrayAttachment attachment) {
         if (this.attachments == null) {
             this.attachments = new ArrayList<>();
         }
@@ -45,18 +59,14 @@ public class EmailMessage {
         return this;
     }
 
-    public EmailMessage setFileAttachments(List<File> attachments) throws Exception {
+    public EmailMessage setFileAttachments(List<File> attachments) {
         this.attachments = MessageConverter.fileListToByteArrayAttachmentList((attachments));
         return this;
     }
 
-    public EmailMessage setAttachments(List<ByteArrayAttachment> attachments) {
+    public EmailMessage setByteArrayAttachments(List<ByteArrayAttachment> attachments) {
         this.attachments = attachments;
         return this;
-    }
-
-    public String getBase64MessageStr(boolean compress) {
-        return "";
     }
 
     public String getFrom() {
@@ -117,5 +127,25 @@ public class EmailMessage {
 
     public List<ByteArrayAttachment> getAttachments() {
         return attachments;
+    }
+
+    private String concatenateRecipient(String prev, String newRecipient) {
+        if (prev == null) {
+            return newRecipient;
+        } else {
+            return prev + "," + newRecipient;
+        }
+    }
+
+    public void addRecipientTo(String to) {
+        this.to = concatenateRecipient(this.to, to);
+    }
+
+    public void addRecipientCc(String cc) {
+        this.cc = concatenateRecipient(this.cc, cc);
+    }
+
+    public void addRecipientBcc(String bcc) {
+        this.bcc = concatenateRecipient(this.bcc, bcc);
     }
 }
