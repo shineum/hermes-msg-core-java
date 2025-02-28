@@ -1,15 +1,18 @@
 package hermesmsg.entity;
 
+import hermesmsg.handler.MessageHandler;
 import hermesmsg.util.MessageConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 public class EmailMessage {
-    Logger logger = Logger.getLogger(EmailMessage.class.getName());
+
+    Logger logger = LoggerFactory.getLogger(EmailMessage.class);
 
     String from;
     String to;
