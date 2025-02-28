@@ -23,4 +23,7 @@ public interface Constant {
     public static final String MESSAGE_VALUE_BODY_CONTENT_TYPE_TEXT = "text";
     public static final String MESSAGE_VALUE_ATTACHMENTS_DATA_TYPE = "#microsoft.graph.fileAttachment";
     public static final String OPTION_USE_COMPRESS = "useCompress";
+    public static final String TXT_CLIENT_NAME = "clientName";
+    public static final String TXT_MSG = "msg";
+    public static final String TXT_OPTIONS = "options";
 }
