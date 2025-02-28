@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 public class SMTP implements IMessageClient, Constant {
-    Logger logger = LoggerFactory.getLogger(SMTP.class);
+    static Logger logger = LoggerFactory.getLogger(SMTP.class);
 
     private String from = null;
     private String displayName = null;
@@ -59,7 +59,7 @@ public class SMTP implements IMessageClient, Constant {
             mbp.setFileName(joAttachment.getString(MESSAGE_KEY_ATTACHMENTS_NAME));
             return mbp;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[PARSE][ATTACHMENT]", e);
         }
         return null;
     }
@@ -77,7 +77,7 @@ public class SMTP implements IMessageClient, Constant {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[PARSE][RECIPIENT]", e);
         }
         return null;
     }
@@ -129,7 +129,7 @@ public class SMTP implements IMessageClient, Constant {
                                     try {
                                         mp.addBodyPart(mbp);
                                     } catch (Exception e) {
-                                        e.printStackTrace();
+                                        logger.error("[SEND][ADD_BODYPART]", e);
                                     }
                                     return null;
                                 });
@@ -146,7 +146,7 @@ public class SMTP implements IMessageClient, Constant {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.TO, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("[SEND][ADD_TO]", e);
                     }
                 });
             }
@@ -156,7 +156,7 @@ public class SMTP implements IMessageClient, Constant {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.CC, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("[PARSE][ADD_CC]", e);
                     }
                 });
             }
@@ -166,14 +166,14 @@ public class SMTP implements IMessageClient, Constant {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.BCC, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error("[SEND][ADD_BCC]", e);
                     }
                 });
             }
             // send
             Transport.send(simpleMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[SEND][TRANSPORT]", e);
         }
     }
 }
