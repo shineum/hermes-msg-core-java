@@ -1,14 +1,16 @@
 package hermesmsg.entity;
 
 import jakarta.activation.MimetypesFileTypeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Base64;
-import java.util.logging.Logger;
 
 public class ByteArrayAttachment {
-    Logger logger = Logger.getLogger(ByteArrayAttachment.class.getName());
+
+    Logger logger = LoggerFactory.getLogger(ByteArrayAttachment.class);
 
     String filename;
     String contentType;
@@ -26,7 +28,7 @@ public class ByteArrayAttachment {
         try {
             this.data = Files.readAllBytes(f.toPath());
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[Attachment]\n", e.toString());
         }
     }
 
