@@ -46,9 +46,9 @@ public class MessageHandler implements Constant {
         try {
             logger.info(String.format("Send Message:\n%s", jsonMsgStr));
             JSONObject jsonObject = new JSONObject(jsonMsgStr);
-            String name = jsonObject.getString("connection");
-            String msg = jsonObject.getString("msg");
-            JSONObject options = jsonObject.getJSONObject("options");
+            String name = jsonObject.getString(TXT_CLIENT_NAME);
+            String msg = jsonObject.getString(TXT_MSG);
+            JSONObject options = jsonObject.getJSONObject(TXT_OPTIONS);
             MessageClientManager.getMessageClient(name).send(msg, options);
         } catch (Exception e) {
             logger.error("[POST]\n", e);
