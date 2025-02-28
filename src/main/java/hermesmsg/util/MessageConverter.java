@@ -5,11 +5,12 @@ import hermesmsg.entity.EmailMessage;
 import jakarta.mail.internet.InternetAddress;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
@@ -17,7 +18,7 @@ import java.util.zip.InflaterOutputStream;
 
 public class MessageConverter implements Constant {
 
-    static Logger logger = Logger.getLogger(MessageConverter.class.getName());
+    static Logger logger = LoggerFactory.getLogger(MessageConverter.class);
 
     public static ByteArrayAttachment fileToByteArrayAttachment(File file) {
         return new ByteArrayAttachment(file, null);
@@ -44,7 +45,7 @@ public class MessageConverter implements Constant {
             baos.close();
             return baos.toByteArray();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[COMPRESS]\n", e);
         }
         return null;
     }
@@ -58,7 +59,7 @@ public class MessageConverter implements Constant {
             baos.close();
             return baos.toByteArray();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[DECOMPRESS]\n", e);
         }
         return null;
     }
@@ -72,7 +73,7 @@ public class MessageConverter implements Constant {
         try {
             return getMessageRecipientObject(InternetAddress.parse(internetAddressStr)[0]);
         } catch (Exception e) {
-            logger.severe(e.toString());
+            logger.error("[PARSE]\n", e);
         }
         return null;
     }
@@ -83,7 +84,7 @@ public class MessageConverter implements Constant {
         try {
             Stream.of(InternetAddress.parse(internetAddressStr)).map(MessageConverter::getMessageRecipientObject).forEach(jsonArray::put);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[GET][recipient]\n", e);
         }
         return jsonArray;
     }
@@ -119,6 +120,7 @@ public class MessageConverter implements Constant {
                 .put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject())
                 .put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml()))
                 .put(MESSAGE_KEY_TO, getMessageRecipientArray(emailMessage.getTo()));
+        
         Optional.ofNullable(parseMessageFromObject(emailMessage.getFrom())).map(val -> {
             jsonObject.put(MESSAGE_KEY_FROM, val);
             return val;
@@ -144,7 +146,7 @@ public class MessageConverter implements Constant {
             }
             return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[BUILD]\n", e);
         }
         return null;
     }
@@ -158,7 +160,7 @@ public class MessageConverter implements Constant {
         try {
             return new JSONObject(jsonMsgStr);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[PARSE][JSON]\n", e);
         }
         return null;
     }
@@ -171,7 +173,7 @@ public class MessageConverter implements Constant {
             }
             return new JSONObject(new String(bytes, "UTF-8"));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("[PARSE][JSON]\n", e);
         }
         return null;
     }
