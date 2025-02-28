@@ -14,20 +14,24 @@ import java.util.logging.Logger;
 public class MessageHandler implements Constant {
     static Logger logger = Logger.getLogger(MessageHandler.class.getName());
 
-    public static void addMessage(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml) throws Exception {
+    public static void addMessage(String messageClientName, String to, String subject, String body) {
+        MessageHandler.addMessage(messageClientName, new EmailMessage(to, subject, body));
+    }
+
+    public static void addMessage(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml) {
         MessageHandler.addMessage(messageClientName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml));
     }
 
-    public static void addMessage(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml, List<File> attachments) throws Exception {
+    public static void addMessage(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml, List<File> attachments) {
         MessageHandler.addMessage(messageClientName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml).setFileAttachments(attachments));
     }
 
-    public static void addMessageWithByteArrayAttachments(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml, List<ByteArrayAttachment> attachments) throws Exception {
-        MessageHandler.addMessage(messageClientName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml).setAttachments(attachments));
+    public static void addMessageWithByteArrayAttachments(String messageClientName, String from, String to, String cc, String bcc, String subject, String body, boolean isHtml, List<ByteArrayAttachment> attachments) {
+        MessageHandler.addMessage(messageClientName, new EmailMessage(from, to, cc, bcc, subject, body, isHtml).setByteArrayAttachments(attachments));
     }
 
-    public static void addMessage(String messageClientName, EmailMessage msg) throws Exception {
-        String jsonMsgStr = MessageConverter.getJsonMsgStr(messageClientName, msg, new JSONObject().put("useCompress", true));
+    public static void addMessage(String messageClientName, EmailMessage msg) {
+        String jsonMsgStr = MessageConverter.getJsonMsgStr(messageClientName, msg, new JSONObject().put(OPTION_USE_COMPRESS, true));
         IMessageQueueHandler messageQueueHandler = MessageQueueManager.getQueueHandler(messageClientName);
         if (messageQueueHandler == null) {
             postMessage(jsonMsgStr);
