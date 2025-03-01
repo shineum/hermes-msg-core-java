@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.StringReader;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -115,29 +116,33 @@ public class MessageConverter implements Constant {
                 .put(MESSAGE_KEY_ATTACHMENTS_DATA, attachment.getBase64Data());
     }
 
-    private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) {
-        JSONObject jsonObject = new JSONObject()
+    public static JSONObject emailMessageToJSONObject(EmailMessage emailMessage) {
+        JSONObject jo = new JSONObject()
                 .put(MESSAGE_KEY_SUBJECT, emailMessage.getSubject())
                 .put(MESSAGE_KEY_BODY, getMessageBodyObject(emailMessage.getBody(), emailMessage.isHtml()))
-                .put(MESSAGE_KEY_TO, getMessageRecipientArray(emailMessage.getTo()));
+                .put(MESSAGE_KEY_TO_RECIPIENTS, getMessageRecipientArray(emailMessage.getTo()));
 
         Optional.ofNullable(parseMessageFromObject(emailMessage.getFrom())).map(val -> {
-            jsonObject.put(MESSAGE_KEY_FROM, val);
+            jo.put(MESSAGE_KEY_FROM, val);
             return val;
         });
         Optional.ofNullable(getMessageRecipientArray(emailMessage.getCc())).map(val -> {
-            jsonObject.put(MESSAGE_KEY_CC, val);
+            jo.put(MESSAGE_KEY_CC_RECIPIENTS, val);
             return val;
         });
         Optional.ofNullable(getMessageRecipientArray(emailMessage.getBcc())).map(val -> {
-            jsonObject.put(MESSAGE_KEY_BCC, val);
+            jo.put(MESSAGE_KEY_BCC_RECIPIENTS, val);
             return val;
         });
         Optional.ofNullable(getMessageAttachmentArray(emailMessage.getAttachments())).map(val -> {
-            jsonObject.put(MESSAGE_KEY_ATTACHMENTS, val);
+            jo.put(MESSAGE_KEY_ATTACHMENTS, val);
             return val;
         });
+        return jo;
+    }
 
+    private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) {
+        JSONObject jsonObject = emailMessageToJSONObject(emailMessage);
         try {
             byte[] bytes = null;
             bytes = jsonObject.toString().getBytes("UTF-8");
@@ -151,24 +156,24 @@ public class MessageConverter implements Constant {
         return null;
     }
 
-    public static String getJsonMsgStr(String connectionName, EmailMessage emailMessage, JSONObject options) {
+    public static String getQueueMsgJsonStr(String messageClientName, EmailMessage emailMessage, JSONObject options) {
         boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get(OPTION_USE_COMPRESS)).orElse(false);
         return new JSONObject()
-                .put(TXT_CLIENT_NAME, connectionName)
-                .put(TXT_MSG, buildJSONMsgStr(emailMessage, useCompress))
+                .put(TXT_CLIENT_NAME, messageClientName)
+                .put(TXT_QUEUE_MSG_CONTENT, buildJSONMsgStr(emailMessage, useCompress))
                 .put(TXT_OPTIONS, options).toString();
     }
 
-    public static JSONObject parseJSONStr(String jsonMsgStr) {
-        try {
-            return new JSONObject(jsonMsgStr);
-        } catch (Exception e) {
-            logger.error("[PARSE][JSON]\n", e);
-        }
-        return null;
-    }
+//    public static JSONObject parseJSONStr(String jsonMsgStr) {
+//        try {
+//            return new JSONObject(jsonMsgStr);
+//        } catch (Exception e) {
+//            logger.error("[PARSE][JSON]\n", e);
+//        }
+//        return null;
+//    }
 
-    public static JSONObject parseEmailMessage(String bodyStr, boolean isCompressed) {
+    public static JSONObject parseQueueMsgContentJO(String bodyStr, boolean isCompressed) {
         try {
             byte[] bytes = Base64.getDecoder().decode(bodyStr);
             if (isCompressed) {
@@ -176,7 +181,7 @@ public class MessageConverter implements Constant {
             }
             return new JSONObject(new String(bytes, "UTF-8"));
         } catch (Exception e) {
-            logger.error("[PARSE][JSON]\n", e);
+            logger.error("[PARSE][QUEUE_MSG_CONTENT]\n", e);
         }
         return null;
     }
@@ -196,6 +201,57 @@ public class MessageConverter implements Constant {
                                 (prev, next) -> next, Properties::new
                         )
                 );
+    }
+
+    public static EmailMessage emailMessageFromHashMap(Map<String, String> map) {
+        return new EmailMessage(
+                map.get(MESSAGE_KEY_FROM),
+                map.get(MESSAGE_KEY_TO),
+                map.get(MESSAGE_KEY_CC),
+                map.get(MESSAGE_KEY_BCC),
+                map.get(MESSAGE_KEY_SUBJECT),
+                map.get(MESSAGE_KEY_BODY),
+                "true".equals(map.get(MESSAGE_KEY_IS_HTML))
+        );
+    }
+
+    public static EmailMessage emailMessageFromJSONObject(JSONObject jo) {
+        return new EmailMessage(
+                jo.getString(MESSAGE_KEY_FROM),
+                jo.getString(MESSAGE_KEY_TO),
+                jo.getString(MESSAGE_KEY_CC),
+                jo.getString(MESSAGE_KEY_BCC),
+                jo.getString(MESSAGE_KEY_SUBJECT),
+                jo.getString(MESSAGE_KEY_BODY),
+                "true".equals(jo.get(MESSAGE_KEY_IS_HTML).toString())
+        );
+    }
+
+    public static EmailMessage emailMessageFromJSONStr(String str) {
+        return emailMessageFromJSONObject(new JSONObject(str));
+    }
+
+    public static EmailMessage emailMessageFromProperties(Properties props) {
+        return new EmailMessage(
+                props.getProperty(MESSAGE_KEY_FROM),
+                props.getProperty(MESSAGE_KEY_TO),
+                props.getProperty(MESSAGE_KEY_CC),
+                props.getProperty(MESSAGE_KEY_BCC),
+                props.getProperty(MESSAGE_KEY_SUBJECT),
+                props.getProperty(MESSAGE_KEY_BODY),
+                "true".equals(props.getProperty(MESSAGE_KEY_IS_HTML))
+        );
+    }
+
+    public static EmailMessage emailMessageFromPropertyStr(String propStr) {
+        try {
+            Properties props = new Properties();
+            props.load(new StringReader(propStr));
+            return emailMessageFromProperties(props);
+        } catch (Exception e) {
+            logger.error("[EM_FROM_PROP_STR]\n", e);
+        }
+        return null;
     }
 }
 
