@@ -1,6 +1,5 @@
 package hermesmsg.entity;
 
-import hermesmsg.handler.MessageHandler;
 import hermesmsg.util.MessageConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
