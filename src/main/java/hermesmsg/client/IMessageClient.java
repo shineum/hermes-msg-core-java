@@ -7,5 +7,7 @@ import java.util.Properties;
 public interface IMessageClient {
     IMessageClient initClient(Properties props);
 
-    void send(String msg, JSONObject options);
+    void send(String queueMsgContentStr);
+
+    void send(JSONObject queueMsgContentJO);
 }
