@@ -1,12 +1,10 @@
 package hermesmsg.client;
 
-import hermesmsg.entity.EmailMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.Properties;
-//import java.util.logging.Logger;
 
 public class MessageClientFactory {
 
