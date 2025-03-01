@@ -141,7 +141,7 @@ public class MessageConverter implements Constant {
         return jo;
     }
 
-    private static String buildJSONMsgStr(EmailMessage emailMessage, boolean useCompress) {
+    public static String buildQueueMsgContentStr(EmailMessage emailMessage, boolean useCompress) {
         JSONObject jsonObject = emailMessageToJSONObject(emailMessage);
         try {
             byte[] bytes = null;
@@ -156,23 +156,6 @@ public class MessageConverter implements Constant {
         return null;
     }
 
-    public static String getQueueMsgJsonStr(String messageClientName, EmailMessage emailMessage, JSONObject options) {
-        boolean useCompress = Optional.ofNullable(options).map(jo -> (boolean) jo.get(OPTION_USE_COMPRESS)).orElse(false);
-        return new JSONObject()
-                .put(TXT_CLIENT_NAME, messageClientName)
-                .put(TXT_QUEUE_MSG_CONTENT, buildJSONMsgStr(emailMessage, useCompress))
-                .put(TXT_OPTIONS, options).toString();
-    }
-
-//    public static JSONObject parseJSONStr(String jsonMsgStr) {
-//        try {
-//            return new JSONObject(jsonMsgStr);
-//        } catch (Exception e) {
-//            logger.error("[PARSE][JSON]\n", e);
-//        }
-//        return null;
-//    }
-
     public static JSONObject parseQueueMsgContentJO(String bodyStr, boolean isCompressed) {
         try {
             byte[] bytes = Base64.getDecoder().decode(bodyStr);
@@ -184,10 +167,6 @@ public class MessageConverter implements Constant {
             logger.error("[PARSE][QUEUE_MSG_CONTENT]\n", e);
         }
         return null;
-    }
-
-    public static JSONObject parseEmailAddressObject(JSONObject jo) {
-        return Optional.ofNullable(jo).map(pJo -> pJo.getJSONObject(MESSAGE_KEY_EMAIL)).orElse(null);
     }
 
     public static Properties mapToProp(Map<String, String> map) {
