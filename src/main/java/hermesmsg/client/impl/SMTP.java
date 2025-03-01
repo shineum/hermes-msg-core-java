@@ -1,9 +1,7 @@
 package hermesmsg.client.impl;
 
 import hermesmsg.client.IMessageClient;
-import hermesmsg.client.MessageClientFactory;
 import hermesmsg.util.Constant;
-import hermesmsg.util.MessageConverter;
 import jakarta.activation.DataHandler;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
@@ -83,47 +81,45 @@ public class SMTP implements IMessageClient, Constant {
     }
 
     @Override
-    public void send(String msg, JSONObject options) {
-        boolean useCompress = false;
-        if (options != null && options.has(OPTION_USE_COMPRESS)) {
-            useCompress = options.getBoolean(OPTION_USE_COMPRESS);
-        }
+    public void send(String queueMsgContentStr) {
+        this.send(new JSONObject(queueMsgContentStr));
+    }
+
+    @Override
+    public void send(JSONObject queueMsgContentJO) {
         try {
-            JSONObject jo = MessageConverter.parseEmailMessage(msg, useCompress);
             Message simpleMessage = new MimeMessage(session);
             // from
             {
                 String fromEmail = from;
                 String fromDisplayName = displayName;
-                if (jo.has(MESSAGE_KEY_FROM)) {
-                    JSONObject joFrom = MessageConverter.parseEmailAddressObject(jo.getJSONObject(MESSAGE_KEY_FROM));
-                    if (joFrom != null) {
-                        if (joFrom.has(MESSAGE_KEY_EMAIL_ADDRESS)) {
-                            fromEmail = joFrom.getString(MESSAGE_KEY_EMAIL_ADDRESS);
-                        }
-                        if (joFrom.has(MESSAGE_KEY_EMAIL_NAME)) {
-                            fromDisplayName = joFrom.getString(MESSAGE_KEY_EMAIL_NAME);
-                        }
+                if (queueMsgContentJO.has(MESSAGE_KEY_FROM)) {
+                    JSONObject joFrom = queueMsgContentJO.getJSONObject(MESSAGE_KEY_FROM);
+                    if (joFrom.has(MESSAGE_KEY_EMAIL_ADDRESS)) {
+                        fromEmail = joFrom.getString(MESSAGE_KEY_EMAIL_ADDRESS);
+                    }
+                    if (joFrom.has(MESSAGE_KEY_EMAIL_NAME)) {
+                        fromDisplayName = joFrom.getString(MESSAGE_KEY_EMAIL_NAME);
                     }
                 }
                 simpleMessage.setFrom(new InternetAddress(fromEmail, fromDisplayName));
             }
             // subject
             {
-                simpleMessage.setSubject(jo.getString(MESSAGE_KEY_SUBJECT));
+                simpleMessage.setSubject(queueMsgContentJO.getString(MESSAGE_KEY_SUBJECT));
             }
             // body (content)
             {
-                JSONObject joBody = jo.getJSONObject(MESSAGE_KEY_BODY);
-                String msgContentType = (joBody.has(MESSAGE_KEY_BODY_CONTENT_TYPE) && "html".equals(joBody.getString(MESSAGE_KEY_BODY_CONTENT_TYPE))) ? "text/html" : "text/plain";
-                if (jo.has(MESSAGE_KEY_ATTACHMENTS)) {
+                JSONObject joBody = queueMsgContentJO.getJSONObject(MESSAGE_KEY_BODY);
+                String msgContentType = (joBody.has(MESSAGE_KEY_BODY_CONTENT_TYPE) && MESSAGE_VALUE_BODY_CONTENT_TYPE_HTML.equals(joBody.getString(MESSAGE_KEY_BODY_CONTENT_TYPE))) ? MESSAGE_CONTENT_TYPE_HTML : MESSAGE_CONTENT_TYPE_TEXT;
+                if (queueMsgContentJO.has(MESSAGE_KEY_ATTACHMENTS)) {
                     Multipart mp = new MimeMultipart();
                     {
                         MimeBodyPart mbp = new MimeBodyPart();
                         mbp.setContent(joBody.getString(MESSAGE_KEY_BODY_CONTENT), msgContentType);
                         mp.addBodyPart(mbp);
                     }
-                    jo.getJSONArray(MESSAGE_KEY_ATTACHMENTS).forEach(jsonAttachment -> {
+                    queueMsgContentJO.getJSONArray(MESSAGE_KEY_ATTACHMENTS).forEach(jsonAttachment -> {
                         Optional.ofNullable(parseAttachment((JSONObject) jsonAttachment))
                                 .map(mbp -> {
                                     try {
@@ -141,8 +137,8 @@ public class SMTP implements IMessageClient, Constant {
                 }
             }
             // recipient to
-            if (jo.has(MESSAGE_KEY_TO)) {
-                jo.getJSONArray(MESSAGE_KEY_TO).forEach(oRecipient -> {
+            if (queueMsgContentJO.has(MESSAGE_KEY_TO_RECIPIENTS)) {
+                queueMsgContentJO.getJSONArray(MESSAGE_KEY_TO_RECIPIENTS).forEach(oRecipient -> {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.TO, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {
@@ -151,8 +147,8 @@ public class SMTP implements IMessageClient, Constant {
                 });
             }
             // recipient cc
-            if (jo.has(MESSAGE_KEY_CC)) {
-                jo.getJSONArray(MESSAGE_KEY_CC).forEach(oRecipient -> {
+            if (queueMsgContentJO.has(MESSAGE_KEY_CC_RECIPIENTS)) {
+                queueMsgContentJO.getJSONArray(MESSAGE_KEY_CC_RECIPIENTS).forEach(oRecipient -> {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.CC, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {
@@ -161,8 +157,8 @@ public class SMTP implements IMessageClient, Constant {
                 });
             }
             // recipient bcc
-            if (jo.has(MESSAGE_KEY_BCC)) {
-                jo.getJSONArray(MESSAGE_KEY_BCC).forEach(oRecipient -> {
+            if (queueMsgContentJO.has(MESSAGE_KEY_BCC_RECIPIENTS)) {
+                queueMsgContentJO.getJSONArray(MESSAGE_KEY_BCC_RECIPIENTS).forEach(oRecipient -> {
                     try {
                         simpleMessage.addRecipient(Message.RecipientType.BCC, parseRecipientInternetAddress((JSONObject) oRecipient));
                     } catch (Exception e) {

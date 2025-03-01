@@ -17,8 +17,12 @@ public class MS_GRAPH implements IMessageClient {
     }
 
     @Override
-    public void send(String msg, JSONObject options) {
-        // TODO send
-        System.out.println(this.getClass().getName());
+    public void send(String queueMsgContentStr) {
+
+    }
+
+    @Override
+    public void send(JSONObject queueMsgContentJO) {
+
     }
 }
