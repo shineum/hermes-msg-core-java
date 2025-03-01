@@ -55,12 +55,17 @@ public class MessageHandler implements Constant {
     }
 
     public static void addMessage(String messageClientName, EmailMessage emailMessage) {
-        JSONObject options = new JSONObject().put(OPTION_USE_COMPRESS, true);
         IMessageQueueHandler messageQueueHandler = MessageQueueManager.getQueueHandler(messageClientName);
         if (messageQueueHandler == null) {
             postMessage(messageClientName, emailMessage);
         } else {
-            messageQueueHandler.addMessage(MessageConverter.getQueueMsgJsonStr(messageClientName, emailMessage, options));
+            boolean useCompress = true;
+            JSONObject options = new JSONObject().put(OPTION_USE_COMPRESS, useCompress);
+            String queueMsgContentStr = MessageConverter.buildQueueMsgContentStr(emailMessage, useCompress);
+            messageQueueHandler.addMessage(new JSONObject()
+                    .put(TXT_CLIENT_NAME, messageClientName)
+                    .put(TXT_QUEUE_MSG_CONTENT, queueMsgContentStr)
+                    .put(TXT_OPTIONS, options).toString());
         }
     }
 
