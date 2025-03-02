@@ -35,7 +35,7 @@ public abstract class MessageManager {
             logger.warn(String.format("[ADD_MSG] No queue handler is set for [%s]", name));
             return postMessage(name, msg);
         } else {
-            return getMessageQueue(name).addMessage(msg);
+            return getMessageQueue(name).addMessage(name, msg);
         }
     }
 
