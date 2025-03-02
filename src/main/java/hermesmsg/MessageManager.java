@@ -35,7 +35,7 @@ public abstract class MessageManager {
             logger.warn(String.format("[ADD_MSG] No queue handler is set for [%s]", name));
             return postMessage(name, msg);
         } else {
-            return getMessageQueue(name).addMessage(name, msg);
+            return messageQueue.addMessage(name, msg);
         }
     }
 
@@ -45,7 +45,7 @@ public abstract class MessageManager {
             return new MessageResult(MessageResult.RET_CODE_ERROR, String.format("No message client is set for [%s]", name));
         } else {
             logger.info(String.format("[POST_MSG] Message will be sent to message client for [%s]", name));
-            return getMessageClient(name).send(msg);
+            return messageClient.send(msg);
         }
     }
 }
