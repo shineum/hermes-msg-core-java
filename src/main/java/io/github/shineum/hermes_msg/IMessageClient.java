@@ -1,6 +1,6 @@
-package hermesmsg;
+package io.github.shineum.hermes_msg;
 
-import hermesmsg.entity.MessageResult;
+import io.github.shineum.hermes_msg.entity.MessageResult;
 
 import java.util.Properties;
 

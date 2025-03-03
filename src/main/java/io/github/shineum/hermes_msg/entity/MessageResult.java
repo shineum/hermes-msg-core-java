@@ -1,25 +1,22 @@
-package hermesmsg.entity;
+package io.github.shineum.hermes_msg.entity;
 
 public class MessageResult {
-    public static final int RET_CODE_SUCCESS = 0;
-    public static final int RET_CODE_ERROR = 1;
-
-    int retCode = RET_CODE_ERROR;
+    MessageResultCode retCode = MessageResultCode.RET_CODE_ERROR;
     String message = null;
 
     public MessageResult() {
     }
 
-    public MessageResult(int retCode, String message) {
+    public MessageResult(MessageResultCode retCode, String message) {
         this.retCode = retCode;
         this.message = message;
     }
 
-    public int getRetCode() {
+    public MessageResultCode getRetCode() {
         return retCode;
     }
 
-    public void setRetCode(int retCode) {
+    public void setRetCode(MessageResultCode retCode) {
         this.retCode = retCode;
     }
 
@@ -31,3 +28,4 @@ public class MessageResult {
         this.message = message;
     }
 }
+

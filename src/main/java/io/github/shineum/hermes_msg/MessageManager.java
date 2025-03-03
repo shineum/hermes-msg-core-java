@@ -1,6 +1,7 @@
-package hermesmsg;
+package io.github.shineum.hermes_msg;
 
-import hermesmsg.entity.MessageResult;
+import io.github.shineum.hermes_msg.entity.MessageResult;
+import io.github.shineum.hermes_msg.entity.MessageResultCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,7 @@ public abstract class MessageManager {
     public static MessageResult postMessage(String name, String msg) {
         IMessageClient messageClient = getMessageClient(name);
         if (messageClient == null) {
-            return new MessageResult(MessageResult.RET_CODE_ERROR, String.format("No message client is set for [%s]", name));
+            return new MessageResult(MessageResultCode.RET_CODE_ERROR, String.format("No message client is set for [%s]", name));
         } else {
             logger.info(String.format("[POST_MSG] Message will be sent to message client for [%s]", name));
             return messageClient.send(msg);
